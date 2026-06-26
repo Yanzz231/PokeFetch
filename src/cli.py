@@ -377,16 +377,17 @@ def open_path(path: Path) -> None:
 
 def handle_paths(args: argparse.Namespace) -> None:
     paths = path_map(args)
-    if args.open:
-        open_path(paths[args.open])
-        print(paths[args.open])
+    open_target = getattr(args, "open", None)
+    if open_target:
+        open_path(paths[open_target])
+        print(paths[open_target])
         return
 
     keys = list(paths)
     for index, key in enumerate(keys, start=1):
         print(f"{index}. {key}: {paths[key]}")
 
-    if args.menu and sys.stdin.isatty():
+    if getattr(args, "menu", False) and sys.stdin.isatty():
         choice = input("Open path number (blank to exit): ").strip()
         if choice.isdigit() and 1 <= int(choice) <= len(keys):
             open_path(paths[keys[int(choice) - 1]])
@@ -475,6 +476,22 @@ def handle_update() -> None:
     print("PokeFetch updated.")
 
 
+def has_render_options(args: argparse.Namespace) -> bool:
+    return any(
+        [
+            args.theme,
+            args.config,
+            args.layout,
+            args.size,
+            args.pokemon,
+            args.shiny,
+            args.sprites_dir,
+            args.shell_name,
+            args.from_cls,
+        ]
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="pokefetch", description="Themeable Pokemon terminal fetch")
     parser.add_argument("--theme", help="Theme name or JSON path")
@@ -490,7 +507,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--from-cls", action="store_true", help=argparse.SUPPRESS)
 
     subparsers = parser.add_subparsers(dest="command")
-    subparsers.add_parser("show", help="Show PokeFetch output")
+    show_parser = subparsers.add_parser("show", help="Show PokeFetch output")
+    show_parser.add_argument("--theme", default=argparse.SUPPRESS, help="Theme name or JSON path")
+    show_parser.add_argument("--config", type=Path, default=argparse.SUPPRESS, help="Config JSON path")
+    show_parser.add_argument("--layout", choices=["side", "stack"], default=argparse.SUPPRESS, help="Override theme layout")
+    show_parser.add_argument("--size", choices=["small", "large"], default=argparse.SUPPRESS, help="Sprite size")
+    show_parser.add_argument("--pokemon", default=argparse.SUPPRESS, help="Pokemon name")
+    show_parser.add_argument("--shiny", action="store_true", default=argparse.SUPPRESS, help="Use shiny sprites")
+    show_parser.add_argument("--sprites-dir", default=argparse.SUPPRESS, help="Path to pokemon-colorscripts repo")
+    show_parser.add_argument("--shell-name", default=argparse.SUPPRESS, help="Displayed shell name")
+    show_parser.add_argument("--from-cls", action="store_true", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
     subparsers.add_parser("menu", help="Open the interactive PokeFetch menu")
     subparsers.add_parser("update", help="Pull and reinstall the latest version from GitHub")
 
@@ -543,7 +569,7 @@ def main(argv: list[str] | None = None) -> None:
         handle_uninstall(args)
         return
 
-    if args.command is None:
+    if args.command is None and not has_render_options(args):
         print("No command provided. Try: pokefetch --help")
         return
 
