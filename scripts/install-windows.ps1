@@ -54,8 +54,9 @@ if (-not (Test-Path -LiteralPath $ClinkDir)) {
     New-Item -ItemType Directory -Path $ClinkDir | Out-Null
 }
 if (Test-Path -LiteralPath $OhMyPoshConfig) {
-    $OhMyPoshConfigForLua = $OhMyPoshConfig.Replace('\', '/').Replace('"', '\"')
-    Set-Content -LiteralPath $ClinkLua -Encoding UTF8 -Value "load(io.popen('oh-my-posh init cmd --config \"$OhMyPoshConfigForLua\"'):read(\"*a\"))()`n"
+    $OhMyPoshConfigForLua = $OhMyPoshConfig.Replace('\', '/')
+    $LuaContent = 'load(io.popen(''oh-my-posh init cmd --config "' + $OhMyPoshConfigForLua + '"''):read("*a"))()'
+    Set-Content -LiteralPath $ClinkLua -Encoding UTF8 -Value ($LuaContent + "`n")
 }
 if (Test-Path -LiteralPath 'C:\Program Files (x86)\clink\clink.bat') {
     & 'C:\Program Files (x86)\clink\clink.bat' set clink.logo none | Out-Null
