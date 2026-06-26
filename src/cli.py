@@ -53,11 +53,11 @@ def package_root() -> Path:
 
 def package_version() -> str:
     try:
-        return importlib.metadata.version("pokefetch")
-    except importlib.metadata.PackageNotFoundError:
         from . import __version__
 
         return __version__
+    except ImportError:
+        return importlib.metadata.version("pokefetch")
 
 
 def load_json(path: Path) -> dict[str, Any]:

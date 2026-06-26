@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pokefetch"
-version = "1.0.0"
+version = "1.0.1"
 description = "A themeable Pokemon terminal fetch for PowerShell, CMD, and Unix shells"
 readme = "README.md"
 requires-python = ">=3.9"
