@@ -1,0 +1,5 @@
+include README.md
+include config.default.json
+recursive-include src/themes *.json
+recursive-include src/colorscripts *
+include src/default_config.json

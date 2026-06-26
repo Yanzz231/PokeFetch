@@ -1,0 +1,34 @@
+{
+  "name": "side-nerd",
+  "layout": "side",
+  "align": "center",
+  "gap": 4,
+  "sprite": {
+    "size": "small",
+    "variant": "regular",
+    "pokemon": null
+  },
+  "info": {
+    "label_width": 9,
+    "separator": " ",
+    "fields": ["user", "os", "shell", "uptime", "cpu", "ram", "disk"],
+    "icons": {
+      "user": "",
+      "os": "",
+      "shell": "",
+      "uptime": "󱑆",
+      "cpu": "",
+      "ram": "",
+      "disk": ""
+    },
+    "colors": {
+      "user": "#ff5555",
+      "os": "#00b894",
+      "shell": "#74b9ff",
+      "uptime": "#fdcb6e",
+      "cpu": "#0984e3",
+      "ram": "#e84393",
+      "disk": "#00cec9"
+    }
+  }
+}

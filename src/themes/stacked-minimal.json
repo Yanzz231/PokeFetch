@@ -1,0 +1,32 @@
+{
+  "name": "stacked-minimal",
+  "layout": "stack",
+  "align": "top",
+  "gap": 2,
+  "sprite": {
+    "size": "small",
+    "variant": "regular",
+    "pokemon": null
+  },
+  "info": {
+    "label_width": 7,
+    "separator": " ",
+    "fields": ["os", "shell", "cpu", "ram", "disk", "uptime"],
+    "icons": {
+      "os": "OS",
+      "shell": "$",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "DSK",
+      "uptime": "UP"
+    },
+    "colors": {
+      "os": "#8be9fd",
+      "shell": "#bd93f9",
+      "cpu": "#ff5555",
+      "ram": "#50fa7b",
+      "disk": "#ffb86c",
+      "uptime": "#f1fa8c"
+    }
+  }
+}

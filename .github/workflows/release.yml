@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+      - name: Smoke test
+        run: |
+          python -m pip install dist/*.whl
+          pokefetch --list-themes
+          pokefetch --theme compact-side --pokemon pikachu > /tmp/pokefetch.txt
+          test -s /tmp/pokefetch.txt
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

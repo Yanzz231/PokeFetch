@@ -1,0 +1,14 @@
+{
+  "name": "compact-side",
+  "layout": "side",
+  "align": "center",
+  "gap": 3,
+  "sprite": { "size": "small", "variant": "regular", "pokemon": null },
+  "info": {
+    "label_width": 7,
+    "separator": " ",
+    "fields": ["os", "shell", "ram", "uptime"],
+    "icons": { "os": "⊞", "shell": "❯", "ram": "▣", "uptime": "◷" },
+    "colors": { "os": "#7dd3fc", "shell": "#c084fc", "ram": "#86efac", "uptime": "#facc15" }
+  }
+}

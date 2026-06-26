@@ -1,0 +1,14 @@
+{
+  "name": "matrix-side",
+  "layout": "side",
+  "align": "center",
+  "gap": 4,
+  "sprite": { "size": "small", "variant": "regular", "pokemon": null },
+  "info": {
+    "label_width": 8,
+    "separator": " ",
+    "fields": ["os", "shell", "uptime", "cpu", "ram", "disk"],
+    "icons": { "os": "01", "shell": ">_", "uptime": "UP", "cpu": "CPU", "ram": "RAM", "disk": "DSK" },
+    "colors": { "os": "#00ff41", "shell": "#00cc33", "uptime": "#39ff14", "cpu": "#00b300", "ram": "#66ff66", "disk": "#00e676" }
+  }
+}

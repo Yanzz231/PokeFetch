@@ -1,0 +1,14 @@
+{
+  "name": "sunset-side",
+  "layout": "side",
+  "align": "center",
+  "gap": 4,
+  "sprite": { "size": "small", "variant": "regular", "pokemon": null },
+  "info": {
+    "label_width": 8,
+    "separator": " ",
+    "fields": ["user", "os", "shell", "uptime", "cpu", "ram", "disk"],
+    "icons": { "user": "☀", "os": "◍", "shell": "❯", "uptime": "◷", "cpu": "⚙", "ram": "▣", "disk": "◧" },
+    "colors": { "user": "#ffbe0b", "os": "#fb5607", "shell": "#ff006e", "uptime": "#ffb703", "cpu": "#8338ec", "ram": "#3a86ff", "disk": "#f77f00" }
+  }
+}

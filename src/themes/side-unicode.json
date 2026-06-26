@@ -1,0 +1,34 @@
+{
+  "name": "side-unicode",
+  "layout": "side",
+  "align": "center",
+  "gap": 4,
+  "sprite": {
+    "size": "small",
+    "variant": "regular",
+    "pokemon": null
+  },
+  "info": {
+    "label_width": 8,
+    "separator": " ",
+    "fields": ["os", "shell", "uptime", "cpu", "ram", "disk"],
+    "icons": {
+      "user": "◆",
+      "os": "⊞",
+      "shell": "❯",
+      "uptime": "◷",
+      "cpu": "⚙",
+      "ram": "▣",
+      "disk": "◧"
+    },
+    "colors": {
+      "user": "#ff5555",
+      "os": "#50fa7b",
+      "shell": "#bd93f9",
+      "uptime": "#f1fa8c",
+      "cpu": "#8be9fd",
+      "ram": "#ff79c6",
+      "disk": "#ffb86c"
+    }
+  }
+}

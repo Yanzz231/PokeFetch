@@ -1,0 +1,14 @@
+{
+  "name": "ocean-side",
+  "layout": "side",
+  "align": "center",
+  "gap": 4,
+  "sprite": { "size": "small", "variant": "regular", "pokemon": null },
+  "info": {
+    "label_width": 8,
+    "separator": " ",
+    "fields": ["os", "shell", "uptime", "cpu", "ram", "disk"],
+    "icons": { "os": "◌", "shell": "≈", "uptime": "◷", "cpu": "✹", "ram": "▣", "disk": "◧" },
+    "colors": { "os": "#00d4ff", "shell": "#48cae4", "uptime": "#90e0ef", "cpu": "#0077b6", "ram": "#00b4d8", "disk": "#caf0f8" }
+  }
+}

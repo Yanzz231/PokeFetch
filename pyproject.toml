@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pokefetch"
+version = "1.0.0"
+description = "A themeable Pokemon terminal fetch for PowerShell, CMD, and Unix shells"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Adrian Pratama" }]
+keywords = ["terminal", "fetch", "pokemon", "neofetch", "cli"]
+classifiers = [
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.scripts]
+pokefetch = "src.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+src = ["default_config.json", "themes/*.json", "colorscripts/**/*"]
