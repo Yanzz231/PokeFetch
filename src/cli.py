@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import importlib.metadata
 import json
 import os
 import platform
@@ -41,8 +42,17 @@ def package_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+def package_version() -> str:
+    try:
+        return importlib.metadata.version("pokefetch")
+    except importlib.metadata.PackageNotFoundError:
+        from . import __version__
+
+        return __version__
+
+
 def load_json(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as file:
+    with path.open("r", encoding="utf-8-sig") as file:
         return json.load(file)
 
 
@@ -346,6 +356,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sprites-dir", help="Path to pokemon-colorscripts repo")
     parser.add_argument("--shell-name", help="Displayed shell name")
     parser.add_argument("--list-themes", action="store_true", help="List bundled themes")
+    parser.add_argument("--version", action="store_true", help="Show version and exit")
 
     subparsers = parser.add_subparsers(dest="command")
     config_parser = subparsers.add_parser("init-config", help="Write a default config JSON")
@@ -360,6 +371,10 @@ def main(argv: list[str] | None = None) -> None:
         reconfigure(encoding="utf-8")
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.version:
+        print(package_version())
+        return
 
     if args.list_themes:
         print("\n".join(list_themes()))

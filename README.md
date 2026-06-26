@@ -10,10 +10,10 @@ Thanks to `phoneybadger/pokemon-colorscripts`. This repository only includes its
 
 ## Preview
 
-Add your screenshots later, for example:
+Put screenshots in the `assets/` folder.
 
 ```md
-![PokeFetch preview](docs/preview.png)
+![PokeFetch preview](assets/preview.png)
 ```
 
 ## Install
@@ -61,6 +61,7 @@ echo 'pokefetch --shell-name bash' >> ~/.bashrc
 
 ```sh
 pokefetch
+pokefetch --version
 pokefetch --list-themes
 pokefetch --theme side-unicode
 pokefetch --theme side-nerd

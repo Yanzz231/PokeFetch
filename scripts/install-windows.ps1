@@ -12,6 +12,12 @@ $CmdAutorun = Join-Path $DataRoot 'cmd-autorun.cmd'
 $PowerShellProfile = $PROFILE.CurrentUserAllHosts
 
 py -m pip install --user -e $Root
+$ScriptsPath = py -c "import site, pathlib; print(pathlib.Path(site.USER_BASE) / 'Scripts')"
+$UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if ($UserPath -notlike "*$ScriptsPath*") {
+    [Environment]::SetEnvironmentVariable('Path', ($UserPath.TrimEnd(';') + ';' + $ScriptsPath), 'User')
+    $env:Path = $env:Path + ';' + $ScriptsPath
+}
 
 if (-not (Test-Path -LiteralPath $DataRoot)) {
     New-Item -ItemType Directory -Path $DataRoot | Out-Null
