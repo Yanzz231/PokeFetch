@@ -20,6 +20,7 @@ from typing import Any
 ESC = "\033"
 RESET = f"{ESC}[0m"
 ANSI_PATTERN = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+REPO_URL = "https://github.com/Yanzz231/PokeFetch.git"
 DEFAULT_CONFIG = {
     "theme": "side-unicode",
     "sprites_dir": None,
@@ -365,7 +366,10 @@ def path_map(args: argparse.Namespace) -> dict[str, Path]:
 def open_path(path: Path) -> None:
     target = path if path.exists() else path.parent
     if os.name == "nt":
-        os.startfile(target)
+        if target.is_file():
+            subprocess.Popen(["explorer", f"/select,{target}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            os.startfile(target)
         return
     command = "open" if sys.platform == "darwin" else "xdg-open"
     subprocess.Popen([command, str(target)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -388,6 +392,89 @@ def handle_paths(args: argparse.Namespace) -> None:
             open_path(paths[keys[int(choice) - 1]])
 
 
+def handle_menu(args: argparse.Namespace) -> None:
+    actions = [
+        ("Show paths", lambda: handle_paths(args)),
+        ("Open config", lambda: open_path(user_config_path())),
+        ("Open config folder", lambda: open_path(user_config_path().parent)),
+        ("Open themes folder", lambda: open_path(Path(__file__).resolve().parent / "themes")),
+        ("Open colorscripts folder", lambda: open_path(Path(__file__).resolve().parent / "colorscripts")),
+        ("Update", handle_update),
+        ("Uninstall hooks only", lambda: handle_uninstall(argparse.Namespace(keep_package=True, purge=False))),
+        ("Uninstall package", lambda: handle_uninstall(argparse.Namespace(keep_package=False, purge=False))),
+    ]
+    for index, (label, _) in enumerate(actions, start=1):
+        print(f"{index}. {label}")
+    choice = input("Choose an option (blank to exit): ").strip()
+    if choice.isdigit() and 1 <= int(choice) <= len(actions):
+        actions[int(choice) - 1][1]()
+
+
+def remove_profile_block(path: Path) -> None:
+    if not path.exists():
+        return
+    text = path.read_text(encoding="utf-8-sig")
+    text = re.sub(r"(?s)\r?\n?# >>> pokefetch >>>.*?# <<< pokefetch <<<\r?\n?", "", text)
+    path.write_text(text.rstrip() + "\n", encoding="utf-8")
+
+
+def handle_uninstall(args: argparse.Namespace) -> None:
+    if os.name == "nt":
+        documents = Path.home() / "Documents"
+        remove_profile_block(documents / "WindowsPowerShell" / "profile.ps1")
+        remove_profile_block(documents / "PowerShell" / "profile.ps1")
+
+        try:
+            import winreg
+
+            key_path = r"Software\Microsoft\Command Processor"
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ | winreg.KEY_WRITE) as key:
+                try:
+                    autorun = winreg.QueryValueEx(key, "AutoRun")[0]
+                except FileNotFoundError:
+                    autorun = ""
+                autorun = re.sub(r'call "[^"]*PokeFetch\\cmd-autorun\.cmd"&?', "", autorun, flags=re.IGNORECASE)
+                autorun = autorun.strip("&")
+                if autorun:
+                    winreg.SetValueEx(key, "AutoRun", 0, winreg.REG_SZ, autorun)
+                else:
+                    try:
+                        winreg.DeleteValue(key, "AutoRun")
+                    except FileNotFoundError:
+                        pass
+        except OSError:
+            pass
+
+        for path in [
+            user_data_dir() / "cmd-autorun.cmd",
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WindowsApps" / "pokefetch.cmd",
+        ]:
+            try:
+                path.unlink()
+            except OSError:
+                pass
+
+    if args.purge:
+        try:
+            user_config_path().unlink()
+        except OSError:
+            pass
+
+    if not args.keep_package:
+        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "pokefetch"], check=False)
+    print("PokeFetch uninstalled.")
+
+
+def handle_update() -> None:
+    root = package_root()
+    if (root / ".git").exists():
+        subprocess.run(["git", "-C", str(root), "pull", "--ff-only", REPO_URL, "main"], check=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "--user", "-e", str(root)], check=True)
+    else:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--user", "--upgrade", f"git+{REPO_URL}"], check=True)
+    print("PokeFetch updated.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="pokefetch", description="Themeable Pokemon terminal fetch")
     parser.add_argument("--theme", help="Theme name or JSON path")
@@ -403,6 +490,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--from-cls", action="store_true", help=argparse.SUPPRESS)
 
     subparsers = parser.add_subparsers(dest="command")
+    subparsers.add_parser("show", help="Show PokeFetch output")
+    subparsers.add_parser("menu", help="Open the interactive PokeFetch menu")
+    subparsers.add_parser("update", help="Pull and reinstall the latest version from GitHub")
+
+    uninstall_parser = subparsers.add_parser("uninstall", help="Remove shell hooks and uninstall PokeFetch")
+    uninstall_parser.add_argument("--keep-package", action="store_true", help="Remove hooks only")
+    uninstall_parser.add_argument("--purge", action="store_true", help="Also remove the config file")
+
     config_parser = subparsers.add_parser("init-config", help="Write a default config JSON")
     config_parser.add_argument("--path", help="Config output path")
     config_parser.add_argument("--force", action="store_true", help="Overwrite existing config")
@@ -434,6 +529,22 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "paths":
         handle_paths(args)
+        return
+
+    if args.command == "menu":
+        handle_menu(args)
+        return
+
+    if args.command == "update":
+        handle_update()
+        return
+
+    if args.command == "uninstall":
+        handle_uninstall(args)
+        return
+
+    if args.command is None:
+        print("No command provided. Try: pokefetch --help")
         return
 
     config = load_config(args.config)

@@ -45,39 +45,49 @@ sh ./scripts/install-unix.sh
 Add PokeFetch to your shell startup file:
 
 ```sh
-pokefetch
+pokefetch show
 ```
 
 Examples:
 
 ```sh
-echo 'pokefetch --shell-name zsh' >> ~/.zshrc
-echo 'pokefetch --shell-name bash' >> ~/.bashrc
+echo 'pokefetch --shell-name zsh show' >> ~/.zshrc
+echo 'pokefetch --shell-name bash show' >> ~/.bashrc
 ```
 
 ## Usage
 
+Running `pokefetch` without a command prints a help hint. Use `pokefetch show` to render the Pokemon fetch output.
+
 ```sh
-pokefetch
+pokefetch --help
 pokefetch --version
+pokefetch show
 pokefetch --list-themes
+pokefetch menu
 pokefetch paths
 pokefetch paths --menu
 pokefetch paths --open config
-pokefetch --theme side-unicode
-pokefetch --theme side-nerd
-pokefetch --theme dracula-side
-pokefetch --theme stacked-minimal
-pokefetch --pokemon pikachu
-pokefetch --pokemon charizard --size large
-pokefetch --layout side
-pokefetch --layout stack
-pokefetch --shiny
+pokefetch --theme side-unicode show
+pokefetch --theme side-nerd show
+pokefetch --theme dracula-side show
+pokefetch --theme stacked-minimal show
+pokefetch --pokemon pikachu show
+pokefetch --pokemon charizard --size large show
+pokefetch --layout side show
+pokefetch --layout stack show
+pokefetch --shiny show
+pokefetch update
+pokefetch uninstall --keep-package
+pokefetch uninstall
 ```
 
-## Paths menu
+## Paths and menu
+
+`paths --open ...` opens File Explorer/Finder on that path.
 
 ```sh
+pokefetch menu
 pokefetch paths
 pokefetch paths --menu
 pokefetch paths --open config

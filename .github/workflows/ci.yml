@@ -21,5 +21,5 @@ jobs:
       - name: Smoke test
         run: |
           pokefetch --list-themes
-          pokefetch --theme compact-side --pokemon pikachu > /tmp/pokefetch.txt
+          pokefetch --theme compact-side --pokemon pikachu show > /tmp/pokefetch.txt
           test -s /tmp/pokefetch.txt

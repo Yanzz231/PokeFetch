@@ -10,16 +10,28 @@ $ConfigDir = Join-Path $env:USERPROFILE '.config\pokefetch'
 $ConfigPath = Join-Path $ConfigDir 'config.json'
 $CmdAutorun = Join-Path $DataRoot 'cmd-autorun.cmd'
 $PowerShellProfile = $PROFILE.CurrentUserAllHosts
+$OhMyPoshConfig = Join-Path $env:USERPROFILE 'Documents\custom_theme.json'
+$ClinkDir = Join-Path $env:LOCALAPPDATA 'clink'
+$ClinkLua = Join-Path $ClinkDir 'oh-my-posh.lua'
 
 py -m pip install --user -e $Root
 $ScriptsPath = py -c "import sysconfig; print(sysconfig.get_path('scripts', scheme='nt_user'))"
+$ShimDir = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
+$ShimPath = Join-Path $ShimDir 'pokefetch.cmd'
 $UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-if ($UserPath -notlike "*$ScriptsPath*") {
-    [Environment]::SetEnvironmentVariable('Path', ($UserPath.TrimEnd(';') + ';' + $ScriptsPath), 'User')
+foreach ($PathItem in @($ScriptsPath, $ShimDir)) {
+    if ($UserPath -notlike "*$PathItem*") {
+        $UserPath = $UserPath.TrimEnd(';') + ';' + $PathItem
+    }
+    if ($env:Path -notlike "*$PathItem*") {
+        $env:Path = $env:Path + ';' + $PathItem
+    }
 }
-if ($env:Path -notlike "*$ScriptsPath*") {
-    $env:Path = $env:Path + ';' + $ScriptsPath
+[Environment]::SetEnvironmentVariable('Path', $UserPath, 'User')
+if (-not (Test-Path -LiteralPath $ShimDir)) {
+    New-Item -ItemType Directory -Path $ShimDir | Out-Null
 }
+Set-Content -LiteralPath $ShimPath -Encoding ASCII -Value "@echo off`r`npy -m src %*`r`n"
 
 if (-not (Test-Path -LiteralPath $DataRoot)) {
     New-Item -ItemType Directory -Path $DataRoot | Out-Null
@@ -38,11 +50,22 @@ if ($ForceConfig -or -not (Test-Path -LiteralPath $ConfigPath)) {
     Set-Content -LiteralPath $ConfigPath -Value ($config + "`n") -Encoding UTF8
 }
 
+if (-not (Test-Path -LiteralPath $ClinkDir)) {
+    New-Item -ItemType Directory -Path $ClinkDir | Out-Null
+}
+if (Test-Path -LiteralPath $OhMyPoshConfig) {
+    $OhMyPoshConfigForLua = $OhMyPoshConfig.Replace('\', '/').Replace('"', '\"')
+    Set-Content -LiteralPath $ClinkLua -Encoding UTF8 -Value "load(io.popen('oh-my-posh init cmd --config \"$OhMyPoshConfigForLua\"'):read(\"*a\"))()`n"
+}
+if (Test-Path -LiteralPath 'C:\Program Files (x86)\clink\clink.bat') {
+    & 'C:\Program Files (x86)\clink\clink.bat' set clink.logo none | Out-Null
+}
+
 if (-not $SkipShellHooks) {
     $psBlock = @'
 function Invoke-PokeFetch {
     if ($env:POKEFETCH_DISABLE -ne '1') {
-        pokefetch --shell-name "PowerShell $($PSVersionTable.PSVersion)"
+        pokefetch --shell-name "PowerShell $($PSVersionTable.PSVersion)" show
     }
 }
 
@@ -57,7 +80,7 @@ if (Test-Path Alias:cls) {
 }
 function global:cls {
     Clear-Host
-    pokefetch --from-cls --shell-name "PowerShell $($PSVersionTable.PSVersion)"
+    pokefetch --from-cls --shell-name "PowerShell $($PSVersionTable.PSVersion)" show
 }
 '@
 
@@ -80,8 +103,8 @@ if not "!_cmd: /c=!"=="!_cmd!" exit /b 0
 if not "!_cmd: /C=!"=="!_cmd!" exit /b 0
 endlocal
 chcp 65001 >nul
-doskey cls=cmd /c cls $T pokefetch --from-cls --shell-name CMD
-pokefetch --shell-name CMD
+doskey cls=cmd /c cls $T pokefetch --from-cls --shell-name CMD show
+pokefetch --shell-name CMD show
 '@
 
     $registryPath = 'HKCU:\Software\Microsoft\Command Processor'
@@ -90,11 +113,20 @@ pokefetch --shell-name CMD
     }
     $existingAutorun = (Get-ItemProperty -Path $registryPath -Name AutoRun -ErrorAction SilentlyContinue).AutoRun
     $call = 'call "' + $CmdAutorun + '"'
-    if (-not $existingAutorun) {
-        Set-ItemProperty -Path $registryPath -Name AutoRun -Value $call
-    } elseif ($existingAutorun -notlike "*$CmdAutorun*") {
-        Set-ItemProperty -Path $registryPath -Name AutoRun -Value ($call + '&' + $existingAutorun)
+    $clinkCall = '"C:\Program Files (x86)\clink\clink.bat" inject --autorun'
+    $existingAutorun = [regex]::Replace($existingAutorun, 'call "[^"]*PokeFetch\\cmd-autorun\.cmd"&?', '', 'IgnoreCase')
+    $existingAutorun = [regex]::Replace($existingAutorun, '"?C:\\Program Files \(x86\)\\clink\\clink\.bat"? inject --autorun(?: --profile [^&]+)?&?', '', 'IgnoreCase')
+    $newAutorun = $call
+    if (Test-Path -LiteralPath 'C:\Program Files (x86)\clink\clink.bat') {
+        $newAutorun = $newAutorun + '&' + $clinkCall
     }
+    if ($existingAutorun) {
+        $existingAutorun = $existingAutorun.Trim('&')
+        if ($existingAutorun) {
+            $newAutorun = $newAutorun + '&' + $existingAutorun
+        }
+    }
+    Set-ItemProperty -Path $registryPath -Name AutoRun -Value $newAutorun
 }
 
 "PokeFetch installed. Config: $ConfigPath"
