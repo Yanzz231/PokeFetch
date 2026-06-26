@@ -12,10 +12,12 @@ $CmdAutorun = Join-Path $DataRoot 'cmd-autorun.cmd'
 $PowerShellProfile = $PROFILE.CurrentUserAllHosts
 
 py -m pip install --user -e $Root
-$ScriptsPath = py -c "import site, pathlib; print(pathlib.Path(site.USER_BASE) / 'Scripts')"
+$ScriptsPath = py -c "import sysconfig; print(sysconfig.get_path('scripts', scheme='nt_user'))"
 $UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 if ($UserPath -notlike "*$ScriptsPath*") {
     [Environment]::SetEnvironmentVariable('Path', ($UserPath.TrimEnd(';') + ';' + $ScriptsPath), 'User')
+}
+if ($env:Path -notlike "*$ScriptsPath*") {
     $env:Path = $env:Path + ';' + $ScriptsPath
 }
 
@@ -31,16 +33,31 @@ if ($ForceConfig -or -not (Test-Path -LiteralPath $ConfigPath)) {
     $config = [ordered]@{
         theme = 'side-unicode'
         sprites_dir = $null
+        show_on_cls = $true
     } | ConvertTo-Json -Depth 4
     Set-Content -LiteralPath $ConfigPath -Value ($config + "`n") -Encoding UTF8
 }
 
 if (-not $SkipShellHooks) {
     $psBlock = @'
+function Invoke-PokeFetch {
+    if ($env:POKEFETCH_DISABLE -ne '1') {
+        pokefetch --shell-name "PowerShell $($PSVersionTable.PSVersion)"
+    }
+}
+
 $pokefetchCommandLine = (Get-CimInstance Win32_Process -Filter "ProcessId=$PID").CommandLine
 $pokefetchInteractive = $pokefetchCommandLine -notmatch '(?i)\s-(command|c|file|f|encodedcommand|enc|noninteractive)\b'
-if ($pokefetchInteractive -and $env:POKEFETCH_DISABLE -ne '1') {
-    py -m src --shell-name "PowerShell $($PSVersionTable.PSVersion)"
+if ($pokefetchInteractive) {
+    Invoke-PokeFetch
+}
+
+if (Test-Path Alias:cls) {
+    Remove-Item Alias:cls -Force
+}
+function global:cls {
+    Clear-Host
+    pokefetch --from-cls --shell-name "PowerShell $($PSVersionTable.PSVersion)"
 }
 '@
 
@@ -49,9 +66,8 @@ if ($pokefetchInteractive -and $env:POKEFETCH_DISABLE -ne '1') {
     }
 
     $profileText = if (Test-Path -LiteralPath $PowerShellProfile) { Get-Content -LiteralPath $PowerShellProfile -Raw } else { '' }
-    if ($profileText -notmatch '# >>> pokefetch >>>') {
-        Add-Content -LiteralPath $PowerShellProfile -Value "`n# >>> pokefetch >>>`n$psBlock`n# <<< pokefetch <<<`n" -Encoding UTF8
-    }
+    $profileText = [regex]::Replace($profileText, '(?s)\r?\n?# >>> pokefetch >>>.*?# <<< pokefetch <<<\r?\n?', '')
+    Set-Content -LiteralPath $PowerShellProfile -Value ($profileText.TrimEnd() + "`n`n# >>> pokefetch >>>`n$psBlock`n# <<< pokefetch <<<`n") -Encoding UTF8
 
     Set-Content -LiteralPath $CmdAutorun -Encoding ASCII -Value @'
 @echo off
@@ -64,7 +80,8 @@ if not "!_cmd: /c=!"=="!_cmd!" exit /b 0
 if not "!_cmd: /C=!"=="!_cmd!" exit /b 0
 endlocal
 chcp 65001 >nul
-py -m src --shell-name CMD
+doskey cls=cmd /c cls $T pokefetch --from-cls --shell-name CMD
+pokefetch --shell-name CMD
 '@
 
     $registryPath = 'HKCU:\Software\Microsoft\Command Processor'

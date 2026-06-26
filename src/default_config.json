@@ -1,4 +1,5 @@
 {
   "theme": "side-unicode",
-  "sprites_dir": null
+  "sprites_dir": null,
+  "show_on_cls": true
 }

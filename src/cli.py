@@ -10,6 +10,7 @@ import random
 import re
 import shutil
 import sys
+import subprocess
 import time
 from dataclasses import dataclass
 from importlib import resources
@@ -19,6 +20,13 @@ from typing import Any
 ESC = "\033"
 RESET = f"{ESC}[0m"
 ANSI_PATTERN = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+DEFAULT_CONFIG = {
+    "theme": "side-unicode",
+    "sprites_dir": None,
+    "show_on_cls": True,
+}
+
+
 @dataclass(frozen=True)
 class Field:
     key: str
@@ -88,8 +96,8 @@ def list_themes() -> list[str]:
 def load_config(path: Path | None) -> dict[str, Any]:
     config_path = path or user_config_path()
     if not config_path.exists():
-        return {}
-    return load_json(config_path)
+        return dict(DEFAULT_CONFIG)
+    return deep_merge(DEFAULT_CONFIG, load_json(config_path))
 
 
 def hex_to_ansi(value: str) -> str:
@@ -337,12 +345,47 @@ def write_default_config(args: argparse.Namespace) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and not args.force:
         raise SystemExit(f"Config already exists: {path}")
-    config = {
-        "theme": "side-unicode",
-        "sprites_dir": None,
-    }
-    path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(DEFAULT_CONFIG, indent=2) + "\n", encoding="utf-8")
     print(path)
+
+
+def path_map(args: argparse.Namespace) -> dict[str, Path]:
+    config = load_config(args.config)
+    package_dir = Path(__file__).resolve().parent
+    sprite_root = find_sprite_root(config, args.sprites_dir) or package_dir
+    return {
+        "config": user_config_path(),
+        "config-dir": user_config_path().parent,
+        "package": package_dir,
+        "themes": package_dir / "themes",
+        "colorscripts": sprite_root / "colorscripts",
+    }
+
+
+def open_path(path: Path) -> None:
+    target = path if path.exists() else path.parent
+    if os.name == "nt":
+        os.startfile(target)
+        return
+    command = "open" if sys.platform == "darwin" else "xdg-open"
+    subprocess.Popen([command, str(target)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def handle_paths(args: argparse.Namespace) -> None:
+    paths = path_map(args)
+    if args.open:
+        open_path(paths[args.open])
+        print(paths[args.open])
+        return
+
+    keys = list(paths)
+    for index, key in enumerate(keys, start=1):
+        print(f"{index}. {key}: {paths[key]}")
+
+    if args.menu and sys.stdin.isatty():
+        choice = input("Open path number (blank to exit): ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(keys):
+            open_path(paths[keys[int(choice) - 1]])
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -357,11 +400,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--shell-name", help="Displayed shell name")
     parser.add_argument("--list-themes", action="store_true", help="List bundled themes")
     parser.add_argument("--version", action="store_true", help="Show version and exit")
+    parser.add_argument("--from-cls", action="store_true", help=argparse.SUPPRESS)
 
     subparsers = parser.add_subparsers(dest="command")
     config_parser = subparsers.add_parser("init-config", help="Write a default config JSON")
     config_parser.add_argument("--path", help="Config output path")
     config_parser.add_argument("--force", action="store_true", help="Overwrite existing config")
+
+    paths_parser = subparsers.add_parser("paths", help="Show or open PokeFetch paths")
+    paths_parser.add_argument("--open", choices=["config", "config-dir", "package", "themes", "colorscripts"], help="Open a path")
+    paths_parser.add_argument("--menu", action="store_true", help="Choose a path from an interactive menu")
     return parser
 
 
@@ -384,7 +432,13 @@ def main(argv: list[str] | None = None) -> None:
         write_default_config(args)
         return
 
+    if args.command == "paths":
+        handle_paths(args)
+        return
+
     config = load_config(args.config)
+    if args.from_cls and not config.get("show_on_cls", True):
+        return
     theme_name = args.theme or config.get("theme", "side-unicode")
     theme = load_theme(theme_name)
     print(render(theme, config, args), end="")

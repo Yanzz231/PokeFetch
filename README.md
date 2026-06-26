@@ -10,11 +10,9 @@ Thanks to `phoneybadger/pokemon-colorscripts`. This repository only includes its
 
 ## Preview
 
-Put screenshots in the `assets/` folder.
+![PokeFetch preview](assets/image.png)
 
-```md
-![PokeFetch preview](assets/preview.png)
-```
+Put more screenshots in the `assets/` folder.
 
 ## Install
 
@@ -63,6 +61,9 @@ echo 'pokefetch --shell-name bash' >> ~/.bashrc
 pokefetch
 pokefetch --version
 pokefetch --list-themes
+pokefetch paths
+pokefetch paths --menu
+pokefetch paths --open config
 pokefetch --theme side-unicode
 pokefetch --theme side-nerd
 pokefetch --theme dracula-side
@@ -72,6 +73,16 @@ pokefetch --pokemon charizard --size large
 pokefetch --layout side
 pokefetch --layout stack
 pokefetch --shiny
+```
+
+## Paths menu
+
+```sh
+pokefetch paths
+pokefetch paths --menu
+pokefetch paths --open config
+pokefetch paths --open themes
+pokefetch paths --open colorscripts
 ```
 
 ## Themes
@@ -150,7 +161,8 @@ Default config:
 ```json
 {
   "theme": "side-unicode",
-  "sprites_dir": null
+  "sprites_dir": null,
+  "show_on_cls": true
 }
 ```
 
@@ -158,6 +170,8 @@ Config path:
 
 - Windows: `%USERPROFILE%\.config\pokefetch\config.json`
 - Linux/macOS: `~/.config/pokefetch/config.json`
+
+`show_on_cls` controls whether PokeFetch appears again after running `cls`.
 
 Change the default theme like this:
 
